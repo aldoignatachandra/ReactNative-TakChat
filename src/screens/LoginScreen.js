@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
-import { View, ScrollView, Text, StyleSheet, TextInput, TouchableOpacity, Image, StatusBar, LayoutAnimation } from 'react-native';
-import { Toast } from 'native-base';
+import { useDispatch, useSelector } from 'react-redux'
+import { View, ScrollView, Text, StyleSheet, TextInput, TouchableOpacity, Image, StatusBar } from 'react-native';
+import { Toast, Spinner  } from 'native-base';
+import { setLoading } from '../redux/actions/loading';
 import * as firebase from 'firebase';
 
 const LoginScreen = (props) => {
@@ -8,6 +10,9 @@ const LoginScreen = (props) => {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [errorMessage, setErrorMessage] = useState(null);
+
+    const isLoading = useSelector(state => state.loading.isLoading);
+    const dispatch = useDispatch();
 
     const showToast = (message, types) => {
         Toast.show({
@@ -19,28 +24,26 @@ const LoginScreen = (props) => {
         })
     }   
 
-    handleLogin = () => {
+    handleLogin = async () => {
 
-        firebase
-            .auth()
-            .signInWithEmailAndPassword(email, password)
-            .then((response) => {
-                if (response.user.emailVerified) {
-                    setTimeout(() => {
-                        showToast("Login Success", "success")
-                        props.navigation.navigate("App")
-                    }, 250);
-                } else {
-                    showToast("Verify Email First", "danger")
-                }
-            })
-            .catch((error) => {
-                setErrorMessage(error.message)
-                showToast(errorMessage, "danger")   
-            })
+        try {
+            dispatch(setLoading(true))
+            const response = await firebase.auth().signInWithEmailAndPassword(email, password);
+            if (response.user.emailVerified) {
+                setTimeout(() => {
+                    showToast("Login Success", "success");
+                    props.navigation.navigate("App");
+                }, 250);
+            } else {
+                showToast("Verify Email First", "danger");
+            }
+        } catch (error) {
+            setErrorMessage(error.message);
+            showToast(errorMessage, "danger");
+        } finally {
+            dispatch(setLoading(false));
+        }
     }
-
-    LayoutAnimation.easeInEaseOut();
 
     return (
         <View style={styles.container}>
@@ -51,6 +54,7 @@ const LoginScreen = (props) => {
                 <View style={styles.form}>  
                     <View>
                         <TextInput
+                            disabled={isLoading}
                             style={styles.inputEmail}
                             returnKeyLabel="Email"
                             returnKeyType="next"
@@ -64,6 +68,7 @@ const LoginScreen = (props) => {
 
                     <View>
                         <TextInput
+                            disabled={isLoading}
                             style={styles.inputPassword}
                             returnKeyLabel="Password"
                             returnKeyType="done"
@@ -76,11 +81,11 @@ const LoginScreen = (props) => {
                     </View>
                 </View>
 
-                <TouchableOpacity style={styles.button} onPress={handleLogin}>
-                    <Text style={styles.textLogin}>LOG IN</Text>
+                <TouchableOpacity disabled={isLoading} style={styles.button} onPress={handleLogin}>
+                    {isLoading ? <Spinner color='#FFEB00' /> : <Text style={styles.textLogin}>LOG IN</Text>}
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.buttonText} onPress={() => props.navigation.navigate("Register")}>
+                <TouchableOpacity  disabled={isLoading} style={styles.buttonText} onPress={() => props.navigation.navigate("Register")}>
                     <Text style={{ color: "black", fontSize: 13 }}>
                         New To TakChat ? <Text style={styles.textSignUp}>Sign Up</Text>
                     </Text>

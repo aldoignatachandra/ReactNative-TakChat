@@ -1,15 +1,18 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Image, LayoutAnimation } from 'react-native';
+import { useDispatch, useSelector } from 'react-redux'
+import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Image, StatusBar } from 'react-native';
+import { Toast, Spinner } from 'native-base';
+import { setLoading } from '../redux/actions/loading';
 import * as firebase from 'firebase';
-import { Toast } from 'native-base';
-import Icon from 'react-native-vector-icons/Ionicons';
+import ImagePicker from 'react-native-image-picker';
 
 const RegisterScreen = (props) => {
 
-    const [username, setUsername] = useState("");
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
+    const [user, setUser] = useState({username:"", email:"", password: "", avatar:null})
     const [errorMessage, setErrorMessage] = useState(null);
+
+    const isLoading = useSelector(state => state.loading.isLoading);
+    const dispatch = useDispatch();
 
     const showToast = (message, types) => {
         Toast.show({
@@ -20,15 +23,25 @@ const RegisterScreen = (props) => {
             position: "bottom"
         })
     }  
+    
+    const handleSignUp = async() => {
 
-    const handleSignUp = () => {
+        if (user.username !== "") {
+            try {
+                dispatch(setLoading(true))
+                const response = await firebase.auth().createUserWithEmailAndPassword(user.email, user.password)
+                
+                //SAVE PROFILE
+                response.user.updateProfile({ 
+                    displayName : user.username,
+                    photoURL : (user.avatar ? user.avatar.uri : null) 
+                })
+                
+                console.log(response);
 
-        firebase
-            .auth()
-            .createUserWithEmailAndPassword(email, password)
-            .then((response) => {
-                const user = firebase.auth().currentUser;
-                user.sendEmailVerification()
+                // SEND EMAIL VERIFY
+                const userDetails = firebase.auth().currentUser;
+                userDetails.sendEmailVerification()
                 .then(() => {
                     props.navigation.navigate("Login");
                     showToast("Success Register", "success")
@@ -37,23 +50,54 @@ const RegisterScreen = (props) => {
                     setErrorMessage(error.message)
                     showToast(errorMessage, "danger")
                 });
-            })
-            .catch((error) => {
-                setErrorMessage(error.message)
-                showToast(errorMessage, "danger")   
-            })
+            } catch (error) {
+                setErrorMessage(error.message);
+                showToast(errorMessage, "danger");
+            } finally {
+                dispatch(setLoading(false));
+            }
+        } else {
+            showToast("Username Cannot be empty", "danger");
+        }
+    }
+    
+    const handleUnpickAvatar = () => {
+        setUser({...user, avatar: null})
     }
 
-    LayoutAnimation.easeInEaseOut();
+    const handlePickAvatar = () => {
+        const option = {
+            noData: true
+        };
+
+        ImagePicker.launchImageLibrary(option, response => {
+            if(response.uri){
+                setUser({...user, avatar: response})
+            }
+        })
+    }
 
     return (
         <View style={styles.container}>
             <ScrollView>
+                <StatusBar backgroundColor="#FFEB00" barStyle="dark-content"></StatusBar>
                 <Text style={styles.textRegister}>REGISTER ACCOUNT</Text>
 
                 <View style={styles.avatarContainer}>
-                    <TouchableOpacity style={styles.avatar}>
-                        <Icon name={'ios-add'} size={40} color={'white'}/>
+                    <TouchableOpacity onPress={handlePickAvatar}>
+                        { user.avatar ? (
+                            <Image source={{uri: user.avatar.uri}} style={styles.avatar}></Image>
+                        ) : (
+                            <Image source={{uri: user.avatar}} style={styles.avatar}></Image>
+                        )}
+                    </TouchableOpacity>
+
+                    <TouchableOpacity onPress={handleUnpickAvatar}>
+                        { user.avatar ? (
+                            <Text style={{marginTop:15}}>Clear Image</Text>
+                        ) : (
+                            <Text style={{marginTop:15}}></Text>
+                        )}
                     </TouchableOpacity>
                 </View>
 
@@ -65,8 +109,8 @@ const RegisterScreen = (props) => {
                             returnKeyType="next"
                             placeholder="Input Username....."
                             autoCapitalize="none"
-                            onChangeText={username => setUsername(username)}
-                            value={username}
+                            onChangeText={username => setUser({...user, username: username})}
+                            value={user.username}
                         ></TextInput>
                     </View>
 
@@ -78,8 +122,8 @@ const RegisterScreen = (props) => {
                             placeholder="Input Email....."
                             autoCapitalize="none"
                             keyboardType="email-address"
-                            onChangeText={email => setEmail(email)}
-                            value={email}
+                            onChangeText={email => setUser({...user, email: email})}
+                            value={user.email}
                         ></TextInput>
                     </View>
 
@@ -91,14 +135,14 @@ const RegisterScreen = (props) => {
                             placeholder="Input Password....."
                             secureTextEntry
                             autoCapitalize="none"
-                            onChangeText={password => setPassword(password)}
-                            value={password}
+                            onChangeText={password => setUser({...user, password: password})}
+                            value={user.password}
                         ></TextInput>
                     </View>
                 </View>
 
                 <TouchableOpacity style={styles.button} onPress={handleSignUp}>
-                    <Text style={styles.textLogin}>SIGN UP</Text>
+                    {isLoading ? <Spinner color='#FFEB00' /> : <Text style={styles.textLogin}>SIGN UP</Text>}
                 </TouchableOpacity>
 
                 <TouchableOpacity style={styles.buttonText} onPress={() => props.navigation.navigate("Login")}>
@@ -123,7 +167,7 @@ const styles = StyleSheet.create({
         marginTop:70
     },
     form: {
-        marginTop:40,
+        marginTop:10,
         marginBottom: 48,
         marginHorizontal: 30
     },
