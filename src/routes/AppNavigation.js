@@ -1,10 +1,9 @@
 import { createAppContainer, createSwitchNavigator } from 'react-navigation';
 import { createStackNavigator } from 'react-navigation-stack';
-import LoadingScreen from './screens/LoadingScreen';
-import LoginScreen from './screens/LoginScreen';
-import RegisterScreen from './screens/RegisterScreen';
+import LoadingScreen from '../screens/LoadingScreen';
+import LoginScreen from '../screens/LoginScreen';
+import RegisterScreen from '../screens/RegisterScreen';
 import TabNavigation from './TabNavigation';
-import firebaseConfig from './FirebaseConfig';
 
 const AppStack = createStackNavigator(
     {

@@ -1,5 +1,5 @@
 import React from 'react';
-import AppNavigation from './src/AppNavigation';
+import AppNavigation from './src/routes/AppNavigation';
 import { Root } from "native-base";
 import { store, persistor } from './src/redux/store';
 import { Provider } from 'react-redux'
@@ -9,11 +9,9 @@ const App = () => {
 
   return(
     <Provider store={store}>
-      <PersistGate persistor={persistor}>
         <Root>
           <AppNavigation/>
         </Root>
-      </PersistGate>
     </Provider>  
   )
 }

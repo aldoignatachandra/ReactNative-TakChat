@@ -1,18 +1,92 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux'
-import { View, ScrollView, Text, StyleSheet, TextInput, TouchableOpacity, Image, StatusBar } from 'react-native';
+import { 
+    View, 
+    ScrollView, 
+    Text, 
+    StyleSheet, 
+    TextInput, 
+    TouchableOpacity, 
+    Image, 
+    StatusBar,
+    PermissionsAndroid, 
+    Platform 
+} from 'react-native';
 import { Toast, Spinner  } from 'native-base';
 import { setLoading } from '../redux/actions/loading';
-import * as firebase from 'firebase';
+import { Db, Auth } from '../services/FirebaseConfig';
+import Geolocation from '@react-native-community/geolocation';
+import AsyncStorage from '@react-native-community/async-storage';
 
 const LoginScreen = (props) => {
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [errorMessage, setErrorMessage] = useState(null);
+    const [location, setLocation] = useState({});
+    const [isMounted, setIsMounted] = useState(false);
 
     const isLoading = useSelector(state => state.loading.isLoading);
     const dispatch = useDispatch();
+
+    const hasLocationPermission = async () => {
+        if ( Platform.OS === 'ios' || (Platform.OS === 'android' && Platform.Version < 23)) {
+          return true;
+        }
+        const hasPermission = await PermissionsAndroid.check(
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+        );
+        if (hasPermission) {
+          return true;
+        }
+        const status = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+        );
+        if (status === PermissionsAndroid.RESULTS.GRANTED) {
+          return true;
+        }
+        if (status === PermissionsAndroid.RESULTS.DENIED) {
+          ToastAndroid.show(
+            'Location Permission Denied By User.',
+            ToastAndroid.LONG,
+          );
+        } else if (status === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
+          ToastAndroid.show(
+            'Location Permission Revoked By User.',
+            ToastAndroid.LONG,
+          );
+        }
+        return false;
+    };
+
+    const getLocation = async () => {
+        const hasLocationPermissions = await hasLocationPermission();
+        
+        if (!hasLocationPermissions) {
+          return;
+        }
+
+        await Geolocation.getCurrentPosition(
+            position => {
+            let {longitude, latitude} = position.coords;
+            
+            setLocation({longitude, latitude});
+            console.log("Location",location);
+          },
+          err => {
+            console.log(err.code, err.message);
+          },
+          {
+            showLocationDialog: true,
+            forceRequestLocation: true,
+            enableHighAccuracy: true,
+            distanceFilter: 50,
+            fastestInterval: 5000,
+            timeout: 8000,
+            maximumAge: 8000,
+          },
+        );
+    };
 
     const showToast = (message, types) => {
         Toast.show({
@@ -24,26 +98,56 @@ const LoginScreen = (props) => {
         })
     }   
 
-    handleLogin = async () => {
-
-        try {
-            dispatch(setLoading(true))
-            const response = await firebase.auth().signInWithEmailAndPassword(email, password);
-            if (response.user.emailVerified) {
-                setTimeout(() => {
-                    showToast("Login Success", "success");
-                    props.navigation.navigate("App");
-                }, 250);
-            } else {
-                showToast("Verify Email First", "danger");
+    const handleLogin = async () => {
+        getLocation();
+        if (Object.keys(location).length !== 2) {
+            return showToast("Not Get Location yet", "danger");
+        } else {
+            try {
+                dispatch(setLoading(true))
+                const response = await Auth.signInWithEmailAndPassword(email, password);
+                await Db.ref('users/' + response.user.uid).update({
+                    status: 'online',
+                    location,
+                });
+    
+                let storage = async () => {
+                    try {
+                        await AsyncStorage.setItem('id', response.user.uid);
+                        await AsyncStorage.setItem('name', response.user.displayName);
+                        await AsyncStorage.setItem('email', email);
+                        await AsyncStorage.setItem('image', response.user.photoURL);
+                    } catch (e) {
+                        // saving error
+                        console.log(e);
+                    }
+                };
+          
+                storage();
+                dispatch(setLoading(false));
+                props.navigation.navigate('App');
+            } catch (error) {
+                setErrorMessage(error.message);
+                showToast(errorMessage, "danger");
+            } finally {
+                dispatch(setLoading(false));
             }
-        } catch (error) {
-            setErrorMessage(error.message);
-            showToast(errorMessage, "danger");
-        } finally {
-            dispatch(setLoading(false));
         }
     }
+    
+    useEffect(() => {
+        const timeOut = setTimeout(async() => {
+            setIsMounted(true);
+            await getLocation();
+        }, 0);
+
+        return () => {
+            clearTimeout(timeOut);
+            setIsMounted(false);
+            Geolocation.clearWatch();
+            Geolocation.stopObserving();
+        }
+    }, []);
 
     return (
         <View style={styles.container}>

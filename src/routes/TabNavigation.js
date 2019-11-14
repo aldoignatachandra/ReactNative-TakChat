@@ -4,9 +4,9 @@ import { createAppContainer } from 'react-navigation';
 import { createBottomTabNavigator } from 'react-navigation-tabs'
 
 //Content
-import ProfileScreen from './screens/ProfileScreen';
-import ChatScreen from './screens/ChatScreen';
-import MapsScreen from './screens/MapsScreen';
+import ProfileScreen from '../screens/ProfileScreen';
+import ChatScreen from '../screens/ChatScreen';
+import MapsScreen from '../screens/MapsScreen';
 
 const TabNavigator = createBottomTabNavigator({
     ProfileScreen: {
@@ -38,11 +38,11 @@ const TabNavigator = createBottomTabNavigator({
             let sourceImage;
             
             if (routeName === 'ProfileScreen') {
-                sourceImage = focused ? require('./images/UserIconSelected.png') : require('./images/UserIcon.png');
+                sourceImage = focused ? require('../images/UserIconSelected.png') : require('../images/UserIcon.png');
             } else if (routeName === 'ChatScreen') {
-                sourceImage = focused ? require('./images/ChatIconSelected.png') : require('./images/ChatIcon.png');
+                sourceImage = focused ? require('../images/ChatIconSelected.png') : require('../images/ChatIcon.png');
             } else {
-                sourceImage = focused ? require('./images/MapsIconSelected.png') : require('./images/MapsIcon.png');
+                sourceImage = focused ? require('../images/MapsIconSelected.png') : require('../images/MapsIcon.png');
             }
             
             return <Image style={focus} source={sourceImage} />;

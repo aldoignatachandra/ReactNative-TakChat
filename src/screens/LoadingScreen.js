@@ -1,8 +1,6 @@
 import React,{ useEffect } from 'react';
-// import { useDispatch, useSelector } from 'react-redux'
 import { View, Image, StyleSheet, ActivityIndicator } from 'react-native';
 import * as firebase from 'firebase';
-// import { setUser } from '../redux/actions/auth';
 
 const LoadingScreen = (props) => {
 
@@ -11,8 +9,8 @@ const LoadingScreen = (props) => {
         firebase.auth().setPersistence(firebase.auth.Auth.Persistence.LOCAL)
         .then(() => {
             firebase.auth().onAuthStateChanged( user => {
-                console.log(user);
-                props.navigation.navigate(user !== null && user.emailVerified ? "App" : "Auth")
+                console.log("User",user);
+                props.navigation.navigate(user !== null ? "App" : "Auth")
             })
         })
         .catch(console.log);

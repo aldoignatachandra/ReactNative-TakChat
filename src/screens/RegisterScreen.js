@@ -1,18 +1,113 @@
 import React, { useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux'
-import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, Image, StatusBar } from 'react-native';
+import { 
+    View, 
+    Text, 
+    StyleSheet, 
+    TextInput, 
+    TouchableOpacity, 
+    ScrollView, 
+    Image, 
+    StatusBar, 
+} from 'react-native';
 import { Toast, Spinner } from 'native-base';
 import { setLoading } from '../redux/actions/loading';
-import * as firebase from 'firebase';
+import { Auth, Db } from '../services/FirebaseConfig';
 import ImagePicker from 'react-native-image-picker';
 
 const RegisterScreen = (props) => {
 
-    const [user, setUser] = useState({username:"", email:"", password: "", avatar:null})
-    const [errorMessage, setErrorMessage] = useState(null);
+    const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [image, setImage] = useState('');
+    const [imgData, setImgData] = useState(null);
+    const [imgLoading, setImgLoading] = useState(false);
 
     const isLoading = useSelector(state => state.loading.isLoading);
     const dispatch = useDispatch();
+
+    const options = {
+        title: 'Select Photo',
+        tintColor: '#1abc9c',
+        storageOptions: {
+          skipBackup: true,
+          path: 'images',
+        },
+    };
+
+    const getCamera = () => {
+        ImagePicker.showImagePicker(options, response => {
+            if (response.didCancel) {
+                console.log('User cancelled image picker');
+            } else if (response.error) {
+                console.log('ImagePicker Error: ', response.error);
+            } else {
+                const source = {uri: 'data:image/jpeg;base64,' + response.data};
+
+                setImage(response.uri);
+                setImgData(source.uri);
+            }
+        });
+    };
+
+    const unpickImage = () => {
+        setImage("");
+        setImgData(null);
+    }
+
+    const register = async () => {
+
+        dispatch(setLoading(true))
+
+        if (imgData == null) {setImgData("https://image.flaticon.com/icons/png/512/64/64572.png")}
+
+        const data = new FormData();
+        data.append('file', imgData);
+        data.append('upload_preset', 'p3se2auy');
+    
+        const res = await fetch(
+            'https://api.cloudinary.com/v1_1/tak-chat/image/upload',
+            {
+            method: 'POST',
+            body: data,
+            },
+        );
+        
+        const file = await res.json();
+    
+        if (name !== "") {  
+            dispatch(setLoading(true))
+            await Auth.createUserWithEmailAndPassword(email, password)
+            .then(async result => {
+                var userPro = Auth.currentUser;
+                userPro.updateProfile({
+                    displayName: name,
+                    photoURL: file.secure_url,
+                });
+                await Db.ref('users/' + result.user.uid)
+                .set({
+                    id: result.user.uid,
+                    name: name,
+                    email: email,
+                    password: password,
+                    image: file.secure_url,
+                })
+                .then(() => {
+                    dispatch(setLoading(false))
+                    showToast("Register Success", "success");
+                    props.navigation.navigate("Login");
+                });
+            })
+            .catch(error => {
+                dispatch(setLoading(false))
+                showToast(error.message, "danger");
+            });
+        } else {
+            dispatch(setLoading(false))
+            showToast("Username Cannot be empty", "danger");  
+        }
+    };
 
     const showToast = (message, types) => {
         Toast.show({
@@ -23,59 +118,6 @@ const RegisterScreen = (props) => {
             position: "bottom"
         })
     }  
-    
-    const handleSignUp = async() => {
-
-        if (user.username !== "") {
-            try {
-                dispatch(setLoading(true))
-                const response = await firebase.auth().createUserWithEmailAndPassword(user.email, user.password)
-                
-                //SAVE PROFILE
-                response.user.updateProfile({ 
-                    displayName : user.username,
-                    photoURL : (user.avatar ? user.avatar.uri : null) 
-                })
-                
-                console.log(response);
-
-                // SEND EMAIL VERIFY
-                const userDetails = firebase.auth().currentUser;
-                userDetails.sendEmailVerification()
-                .then(() => {
-                    props.navigation.navigate("Login");
-                    showToast("Success Register", "success")
-                })
-                .catch(function(error) {
-                    setErrorMessage(error.message)
-                    showToast(errorMessage, "danger")
-                });
-            } catch (error) {
-                setErrorMessage(error.message);
-                showToast(errorMessage, "danger");
-            } finally {
-                dispatch(setLoading(false));
-            }
-        } else {
-            showToast("Username Cannot be empty", "danger");
-        }
-    }
-    
-    const handleUnpickAvatar = () => {
-        setUser({...user, avatar: null})
-    }
-
-    const handlePickAvatar = () => {
-        const option = {
-            noData: true
-        };
-
-        ImagePicker.launchImageLibrary(option, response => {
-            if(response.uri){
-                setUser({...user, avatar: response})
-            }
-        })
-    }
 
     return (
         <View style={styles.container}>
@@ -84,68 +126,76 @@ const RegisterScreen = (props) => {
                 <Text style={styles.textRegister}>REGISTER ACCOUNT</Text>
 
                 <View style={styles.avatarContainer}>
-                    <TouchableOpacity onPress={handlePickAvatar}>
-                        { user.avatar ? (
-                            <Image source={{uri: user.avatar.uri}} style={styles.avatar}></Image>
-                        ) : (
-                            <Image source={{uri: user.avatar}} style={styles.avatar}></Image>
-                        )}
-                    </TouchableOpacity>
-
-                    <TouchableOpacity onPress={handleUnpickAvatar}>
-                        { user.avatar ? (
-                            <Text style={{marginTop:15}}>Clear Image</Text>
-                        ) : (
-                            <Text style={{marginTop:15}}></Text>
-                        )}
+                    {image ? (
+                        <Image style={styles.avatar} source={{uri: image}} />
+                    ) : (
+                        <TouchableOpacity onPress={() => getCamera()} style={styles.avatar} disabled={isLoading}>
+                            {imgLoading ? (
+                                <Spinner color="#FFEB00" style={{margin: 0, padding: 0}} />
+                            ) : (
+                                <Text style={styles.imgDummyText}>+</Text>
+                            )}
+                        </TouchableOpacity>
+                    )}
+                </View>
+                <View>
+                    <TouchableOpacity onPress={() => unpickImage()} disabled={isLoading}>
+                        {image ? (
+                            <Text style={{textAlign:"center"}}>Clear Image</Text>
+                        ) : 
+                            <Text style={{textAlign:"center"}}></Text>
+                        }
                     </TouchableOpacity>
                 </View>
 
                 <View style={styles.form}>
                     <View>
                         <TextInput
+                            disabled={isLoading}
                             style={styles.inputUsername}
-                            returnKeyLabel="Username"
+                            returnKeyLabel="name"
                             returnKeyType="next"
-                            placeholder="Input Username....."
+                            placeholder="Input Name....."
                             autoCapitalize="none"
-                            onChangeText={username => setUser({...user, username: username})}
-                            value={user.username}
+                            onChangeText={name => setName(name)}
+                            value={name}
                         ></TextInput>
                     </View>
 
                     <View>
                         <TextInput
+                            disabled={isLoading}
                             style={styles.inputEmail}
                             returnKeyLabel="Email"
                             returnKeyType="next"
                             placeholder="Input Email....."
                             autoCapitalize="none"
                             keyboardType="email-address"
-                            onChangeText={email => setUser({...user, email: email})}
-                            value={user.email}
+                            onChangeText={email => setEmail(email)}
+                            value={email}
                         ></TextInput>
                     </View>
 
                     <View>
                         <TextInput 
+                            disabled={isLoading}
                             style={styles.inputPassword}
                             returnKeyLabel="Password"
                             returnKeyType="done"
                             placeholder="Input Password....."
                             secureTextEntry
                             autoCapitalize="none"
-                            onChangeText={password => setUser({...user, password: password})}
-                            value={user.password}
+                            onChangeText={password => setPassword(password)}
+                            value={password}
                         ></TextInput>
                     </View>
                 </View>
 
-                <TouchableOpacity style={styles.button} onPress={handleSignUp}>
+                <TouchableOpacity style={styles.button} onPress={register} disabled={isLoading}>
                     {isLoading ? <Spinner color='#FFEB00' /> : <Text style={styles.textLogin}>SIGN UP</Text>}
                 </TouchableOpacity>
 
-                <TouchableOpacity style={styles.buttonText} onPress={() => props.navigation.navigate("Login")}>
+                <TouchableOpacity style={styles.buttonText} onPress={() => props.navigation.navigate("Login")} disabled={isLoading}>
                     <Text style={{ color: "#414959", fontSize: 13 }}>
                         Already have an account ? <Text style={styles.textSignUp}>Login</Text>
                     </Text>
@@ -167,7 +217,7 @@ const styles = StyleSheet.create({
         marginTop:70
     },
     form: {
-        marginTop:10,
+        marginTop:40,
         marginBottom: 48,
         marginHorizontal: 30
     },
@@ -247,7 +297,12 @@ const styles = StyleSheet.create({
         width:"100%",
         marginTop:30,
         marginBottom:10
-    }
+    },
+    imgDummyText: {
+        fontWeight: 'normal',
+        fontSize: 24,
+        color: '#2c3e50',
+    },
 })
 
 export default RegisterScreen;

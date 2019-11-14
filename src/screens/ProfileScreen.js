@@ -1,13 +1,14 @@
 import React, { useState,useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Image } from 'react-native';
 import { Toast } from 'native-base';
-import * as firebase from 'firebase';
+import {Db, Auth} from '../services/FirebaseConfig';
+import AsyncStorage from '@react-native-community/async-storage';
 
-const ProfileScreen = () => {
+const ProfileScreen = (props) => {
 
     const [email, setEmail] = useState("");
     const [displayName, setDisplayName] = useState("");
-    const [avatar, setAvatar] = useState(null);
+    const [image, setImage] = useState(null);
 
     const showToast = (message, types) => {
         Toast.show({
@@ -19,31 +20,53 @@ const ProfileScreen = () => {
         })
     }   
 
-    useEffect(() => {
-        const { email, displayName, photoURL } = firebase.auth().currentUser;
-        setEmail(email);
-        setDisplayName(displayName);
-        setAvatar(photoURL);
-    }, []);
-
-    const signOutUser = () => {
+    const signOutUser = async() => {
+        const ID = await AsyncStorage.getItem('id');
+        Db.ref('users/' + ID).update({status: 'offline'});
+        AsyncStorage.clear();
+        Auth.signOut();
         setTimeout(() => {
-            showToast("Logout Success", "success")
-            firebase.auth().signOut();
+            props.navigation.navigate('Login');
         }, 1000);
     }
 
+    useEffect(() => {
+        const getid = async () => {
+            try {
+                const getName = await AsyncStorage.getItem('name')
+                const getEmail = await AsyncStorage.getItem('email');
+                const getImage = await AsyncStorage.getItem('image');
+    
+                setDisplayName(getName);
+                setEmail(getEmail);
+                setImage(getImage);
+
+            } catch (e) {
+                console.log(e);
+            }
+        };
+
+        const timeOut = setTimeout(() => {
+            getid();
+        }, 0);
+
+        return () => {
+            clearTimeout(timeOut);
+        }
+    }, []);
+
     return (
         <View style={styles.container}>
-            <StatusBar backgroundColor="white" barStyle="dark-content"></StatusBar>
+            {console.log("RESPONSE",displayName, email, image)}
+            <StatusBar backgroundColor="#FFEB00" barStyle="dark-content"></StatusBar>
             <Text>Hi {email}</Text>
             <Text>You Are {displayName}</Text>
 
             <View style={styles.avatarContainer}>
-                <Image source={{uri: avatar}} style={styles.avatar}></Image>
+                <Image source={{uri: image}} style={styles.avatar}></Image>
             </View>
 
-            <TouchableOpacity  style={{marginTop: 32}} onPress={() => signOutUser()}>
+            <TouchableOpacity  style={{marginTop: 32, backgroundColor:"red", width:100}} onPress={() => signOutUser()}>
                 <Text>Logout</Text>
             </TouchableOpacity>
         </View>
