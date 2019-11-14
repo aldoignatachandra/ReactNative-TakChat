@@ -1,14 +1,17 @@
 import React, { useState,useEffect } from 'react';
+import { useDispatch, useSelector } from 'react-redux'
 import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Image } from 'react-native';
-import { Toast } from 'native-base';
+import { Toast, Spinner } from 'native-base';
 import {Db, Auth} from '../services/FirebaseConfig';
 import AsyncStorage from '@react-native-community/async-storage';
+import { setLoading } from '../redux/actions/loading';
+import { setUserNull } from '../redux/actions/user';
 
 const ProfileScreen = (props) => {
 
-    const [email, setEmail] = useState("");
-    const [displayName, setDisplayName] = useState("");
-    const [image, setImage] = useState(null);
+    const user = useSelector(state => state.user.user);
+    const isLoading = useSelector(state => state.loading.isLoading);
+    const dispatch = useDispatch();
 
     const showToast = (message, types) => {
         Toast.show({
@@ -21,53 +24,67 @@ const ProfileScreen = (props) => {
     }   
 
     const signOutUser = async() => {
-        const ID = await AsyncStorage.getItem('id');
-        Db.ref('users/' + ID).update({status: 'offline'});
-        AsyncStorage.clear();
+        // const ID = await AsyncStorage.getItem('id');
+        Db.ref('users/' + user.id).update({status: 'offline'});
+        dispatch(setUserNull());
         Auth.signOut();
         setTimeout(() => {
             props.navigation.navigate('Login');
+            showToast("Success Logout", "success");
         }, 1000);
     }
 
-    useEffect(() => {
-        const getid = async () => {
-            try {
-                const getName = await AsyncStorage.getItem('name')
-                const getEmail = await AsyncStorage.getItem('email');
-                const getImage = await AsyncStorage.getItem('image');
-    
-                setDisplayName(getName);
-                setEmail(getEmail);
-                setImage(getImage);
+    // const getid = async () => {
+    //     try {
+    //         console.log("GET ID START");
+    //         dispatch(setLoading(true))
+    //         const getName = await AsyncStorage.getItem('name');
+    //         const getEmail = await AsyncStorage.getItem('email');
+    //         const getImage = await AsyncStorage.getItem('image');
 
-            } catch (e) {
-                console.log(e);
-            }
-        };
+    //         setDisplayName(getName);
+    //         setEmail(getEmail);
+    //         setImage(getImage);
 
-        const timeOut = setTimeout(() => {
-            getid();
-        }, 0);
+    //         console.log("GET ID", getName, getEmail, getImage);
 
-        return () => {
-            clearTimeout(timeOut);
-        }
-    }, []);
+    //     } catch (e) {
+    //         console.log(e);
+    //     } finally {
+    //         dispatch(setLoading(false))
+    //     }
+    // };
+
+    // useEffect(() => {
+    //     getid();
+    // }, []);
 
     return (
-        <View style={styles.container}>
-            {console.log("RESPONSE",displayName, email, image)}
-            <StatusBar backgroundColor="#FFEB00" barStyle="dark-content"></StatusBar>
-            <Text>Hi {email}</Text>
-            <Text>You Are {displayName}</Text>
-
-            <View style={styles.avatarContainer}>
-                <Image source={{uri: image}} style={styles.avatar}></Image>
+        <View>
+            <View style={{backgroundColor:'#FFEB00', height: 190}}>
+                <StatusBar backgroundColor="#FFEB00" barStyle="dark-content"></StatusBar>
+                <View style={{height:280}}>
+                    <Text style={{alignSelf:"center", marginTop:40, fontWeight:"bold", color:"#615414", fontSize:40}}>PROFILE</Text>
+                </View>
             </View>
 
-            <TouchableOpacity  style={{marginTop: 32, backgroundColor:"red", width:100}} onPress={() => signOutUser()}>
-                <Text>Logout</Text>
+            <View style={{marginTop:50}}>
+                <Text style={styles.textField}>Username</Text>
+                <View style={styles.boxField}>
+                    <Text style={styles.textInsideBox}>{user.name}</Text>
+                </View>
+                <Text style={styles.textField}>Email</Text>
+                <View style={styles.boxField}>
+                    <Text style={styles.textInsideBox}>{user.email}</Text>
+                </View>
+            </View>
+            
+            <View style={styles.avatarContainer}>
+                <Image source={{uri: user.image}} style={styles.avatar}></Image>
+            </View>
+
+            <TouchableOpacity  style={styles.logoutButton} onPress={() => signOutUser()}>
+                <Text style={{color:"#615414", fontSize:17, fontWeight:"bold"}}>Logout</Text>
             </TouchableOpacity>
         </View>
     )
@@ -82,16 +99,52 @@ const styles = StyleSheet.create({
     avatar: {
         width: 130,
         height: 130,
-        borderRadius: 60,
+        borderRadius: 90,
         backgroundColor: "#E1E2E6",
-        justifyContent: "center",
-        alignItems: "center" 
+        borderWidth: 5,
+        borderColor: "white"
     },
     avatarContainer: {
+        position:'absolute',
         alignItems:"center",
-        width:"100%",
-        marginTop:30,
-        marginBottom:10
+        justifyContent:'center',
+        width: '100%',
+        height: 370,
+        marginBottom:10,
+    },
+    logoutButton: {
+        marginVertical:100,
+        alignSelf:"center",
+        backgroundColor:"#FFEB00", 
+        width:120,
+        height:40,
+        borderRadius: 50,
+        borderWidth:2,
+        borderColor: "#615414", 
+        alignContent:"center", 
+        justifyContent:"center",
+        alignItems: "center"
+    },
+    textField: {
+        marginHorizontal:25, 
+        marginTop:15,
+        fontSize:13, 
+        fontWeight:"bold"
+    },
+    textInsideBox: {
+        textAlign:"center",
+        fontWeight:"bold",
+        fontSize:17
+    },
+    boxField: {
+        borderColor:"#615414", 
+        borderWidth:2, 
+        marginHorizontal:20, 
+        justifyContent:"center", 
+        alignItems:"center",
+        height:40,
+        borderRadius: 12,
+        marginTop: 5
     }
 })
 

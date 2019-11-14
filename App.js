@@ -9,9 +9,11 @@ const App = () => {
 
   return(
     <Provider store={store}>
+      <PersistGate persistor={persistor}>
         <Root>
           <AppNavigation/>
         </Root>
+      </PersistGate>
     </Provider>  
   )
 }

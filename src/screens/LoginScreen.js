@@ -14,6 +14,7 @@ import {
 } from 'react-native';
 import { Toast, Spinner  } from 'native-base';
 import { setLoading } from '../redux/actions/loading';
+import { setUser } from '../redux/actions/user';
 import { Db, Auth } from '../services/FirebaseConfig';
 import Geolocation from '@react-native-community/geolocation';
 import AsyncStorage from '@react-native-community/async-storage';
@@ -74,15 +75,15 @@ const LoginScreen = (props) => {
             console.log("Location",location);
           },
           err => {
-            console.log(err.code, err.message);
+            console.log(err);
           },
           {
             showLocationDialog: true,
             forceRequestLocation: true,
-            enableHighAccuracy: true,
+            enableHighAccuracy: false,
             distanceFilter: 50,
             fastestInterval: 5000,
-            timeout: 8000,
+            timeout: 10000,
             maximumAge: 8000,
           },
         );
@@ -99,7 +100,7 @@ const LoginScreen = (props) => {
     }   
 
     const handleLogin = async () => {
-        getLocation();
+        await getLocation();
         if (Object.keys(location).length !== 2) {
             return showToast("Not Get Location yet", "danger");
         } else {
@@ -110,20 +111,27 @@ const LoginScreen = (props) => {
                     status: 'online',
                     location,
                 });
-    
-                let storage = async () => {
-                    try {
-                        await AsyncStorage.setItem('id', response.user.uid);
-                        await AsyncStorage.setItem('name', response.user.displayName);
-                        await AsyncStorage.setItem('email', email);
-                        await AsyncStorage.setItem('image', response.user.photoURL);
-                    } catch (e) {
-                        // saving error
-                        console.log(e);
-                    }
-                };
+                
+                dispatch(setUser(
+                    response.user.uid, 
+                    response.user.displayName,
+                    email,
+                    response.user.photoURL
+                ))
+
+                // let storage = async () => {
+                //     try {
+                //         await AsyncStorage.setItem('id', response.user.uid);
+                //         await AsyncStorage.setItem('name', response.user.displayName);
+                //         await AsyncStorage.setItem('email', email);
+                //         await AsyncStorage.setItem('image', response.user.photoURL);
+                //     } catch (e) {
+                //         // saving error
+                //         console.log(e);
+                //     }
+                // };
           
-                storage();
+                // await storage();
                 dispatch(setLoading(false));
                 props.navigation.navigate('App');
             } catch (error) {

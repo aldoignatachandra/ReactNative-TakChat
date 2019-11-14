@@ -3,6 +3,7 @@ import { persistReducer } from 'redux-persist';
 import { name } from '../../../app.json';
 import AsyncStorage from '@react-native-community/async-storage';
 import loading from './loading';
+import user from './user';
 
 const persistConfig = {
     key: name,
@@ -10,7 +11,8 @@ const persistConfig = {
 }
 
 const reducers = combineReducers({
-    loading: loading
+    loading: loading,
+    user: persistReducer(persistConfig, user)
 })
 
 export default reducers;
