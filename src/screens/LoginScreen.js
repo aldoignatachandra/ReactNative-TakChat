@@ -118,20 +118,7 @@ const LoginScreen = (props) => {
                     email,
                     response.user.photoURL
                 ))
-
-                // let storage = async () => {
-                //     try {
-                //         await AsyncStorage.setItem('id', response.user.uid);
-                //         await AsyncStorage.setItem('name', response.user.displayName);
-                //         await AsyncStorage.setItem('email', email);
-                //         await AsyncStorage.setItem('image', response.user.photoURL);
-                //     } catch (e) {
-                //         // saving error
-                //         console.log(e);
-                //     }
-                // };
-          
-                // await storage();
+                
                 dispatch(setLoading(false));
                 props.navigation.navigate('App');
             } catch (error) {

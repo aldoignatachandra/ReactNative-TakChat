@@ -2,9 +2,7 @@ import React, { useState,useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux'
 import { View, Text, StyleSheet, TouchableOpacity, StatusBar, Image } from 'react-native';
 import { Toast, Spinner } from 'native-base';
-import {Db, Auth} from '../services/FirebaseConfig';
-import AsyncStorage from '@react-native-community/async-storage';
-import { setLoading } from '../redux/actions/loading';
+import { Db, Auth } from '../services/FirebaseConfig';
 import { setUserNull } from '../redux/actions/user';
 
 const ProfileScreen = (props) => {
@@ -24,7 +22,6 @@ const ProfileScreen = (props) => {
     }   
 
     const signOutUser = async() => {
-        // const ID = await AsyncStorage.getItem('id');
         Db.ref('users/' + user.id).update({status: 'offline'});
         dispatch(setUserNull());
         Auth.signOut();
@@ -33,31 +30,6 @@ const ProfileScreen = (props) => {
             showToast("Success Logout", "success");
         }, 1000);
     }
-
-    // const getid = async () => {
-    //     try {
-    //         console.log("GET ID START");
-    //         dispatch(setLoading(true))
-    //         const getName = await AsyncStorage.getItem('name');
-    //         const getEmail = await AsyncStorage.getItem('email');
-    //         const getImage = await AsyncStorage.getItem('image');
-
-    //         setDisplayName(getName);
-    //         setEmail(getEmail);
-    //         setImage(getImage);
-
-    //         console.log("GET ID", getName, getEmail, getImage);
-
-    //     } catch (e) {
-    //         console.log(e);
-    //     } finally {
-    //         dispatch(setLoading(false))
-    //     }
-    // };
-
-    // useEffect(() => {
-    //     getid();
-    // }, []);
 
     return (
         <View>

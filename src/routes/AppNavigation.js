@@ -3,11 +3,13 @@ import { createStackNavigator } from 'react-navigation-stack';
 import LoadingScreen from '../screens/LoadingScreen';
 import LoginScreen from '../screens/LoginScreen';
 import RegisterScreen from '../screens/RegisterScreen';
+import PersonalChatScreen from '../screens/PersonalChatScreen'
 import TabNavigation from './TabNavigation';
 
 const AppStack = createStackNavigator(
     {
       TabNavigation,
+      PersonalChatScreen
     },
     {
       initialRouteName: 'TabNavigation',
