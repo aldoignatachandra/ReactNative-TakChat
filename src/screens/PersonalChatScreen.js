@@ -131,7 +131,7 @@ const PersonalChatScreen = (props) => {
                     <View style={{marginLeft: 5}}>
                     <Text style={styles.heading}>{person.name}</Text>
                     {person.status == 'online' ? (
-                        <View style={{flexDirection:'row'}}>
+                        <View style={{flexDirection:'row', alignItems:'center'}}>
                         <Icon name={'ios-disc'} size={10} color={'green'}/>
                         <Text style={styles.on}>{person.status}</Text>
                         </View>

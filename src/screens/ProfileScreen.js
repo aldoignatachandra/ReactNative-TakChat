@@ -38,6 +38,10 @@ const ProfileScreen = (props) => {
         }, 500);
     }
 
+    const editImage = () => {
+        
+    }
+
     const editName = () => {
         if (username === "") {
             setUsername(user.name);
@@ -59,6 +63,7 @@ const ProfileScreen = (props) => {
                 `Success edit username to ${username}`,
                 ToastAndroid.SHORT,
             );
+
             setDialogEditName(false);
         }
     }

@@ -16,7 +16,8 @@ import { Toast, Spinner  } from 'native-base';
 import { setLoading } from '../redux/actions/loading';
 import { setUser } from '../redux/actions/user';
 import { Db, Auth } from '../services/FirebaseConfig';
-import Geolocation from '@react-native-community/geolocation';
+// import Geolocation from '@react-native-community/geolocation';
+import Geolocation from 'react-native-geolocation-service';
 
 const LoginScreen = (props) => {
 
