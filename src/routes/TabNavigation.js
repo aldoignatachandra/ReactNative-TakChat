@@ -29,7 +29,7 @@ const TabNavigator = createBottomTabNavigator({
     },
 },{
     //router config
-    initialRouteName: 'ProfileScreen',
+    initialRouteName: 'ChatScreen',
     order: ['ProfileScreen','ChatScreen','MapsScreen'],
     defaultNavigationOptions: ({ navigation }) => ({
         tabBarIcon: ({focused}) => {

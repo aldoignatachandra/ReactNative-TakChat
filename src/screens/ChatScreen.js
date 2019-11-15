@@ -23,30 +23,26 @@ const ChatScreen = (props) => {
     const [uid, setUid] = useState('');
 
     useEffect(() => {
-        const timeOut = setTimeout(async() => {
-            const uid = user.id
-            setUid(uid);
-            dispatch(setLoading(true))
-            await Db.ref('/users').on('child_added', data => {
-                let person = data.val();
-                if (person.id != uid) {
-                    setUserList(prevData => [...prevData, person]);
-                    dispatch(setLoading(false))
-                }
-            });
-        }, 0);
-
-        return () => {
-            clearTimeout(timeOut);
-        }
-
-    }, []);
+      setUserList([]);
+      if (typeof user.id !== "undefined") {
+          const uid = user.id
+          setUid(uid);
+          dispatch(setLoading(true))
+          Db.ref('/users').on('child_added', data => {
+            let person = data.val();
+            if (person.id != uid) {
+                setUserList(prevData => [...prevData, person]);
+                dispatch(setLoading(false))
+            }
+          });
+      }
+    }, [user]);
 
     const renderItem = ({item}) => {
-        console.log(item);
         return (
           <TouchableOpacity
-            onPress={() => props.navigation.navigate('PersonalChatScreen',{item})}>
+            onPress={() => props.navigation.navigate('PersonalChatScreen',{item})}
+          >
             <View style={styles.row}>
               <Image source={{uri: item.image}} style={styles.pic} />
               <View>
@@ -74,6 +70,13 @@ const ChatScreen = (props) => {
 
     return (
         <>
+          <View style={styles.header}>
+            <>
+              <View style={{marginLeft: 15}}>
+                <Text style={styles.heading}>Chat</Text>
+              </View>
+            </>
+          </View>
             <SafeAreaView>
                 {isLoading === true ? (
                     <ActivityIndicator
@@ -147,6 +150,20 @@ const styles = StyleSheet.create({
       color: '#615414',
       fontSize: 12,
     },
+    header: {
+      backgroundColor: '#FFEB00',
+      height: 70,
+      width: '100%',
+      paddingHorizontal: 12,
+      zIndex: 2,
+      flexDirection: 'row',
+      alignItems: 'center',
+    },
+    heading: {
+      color: "#615414",
+      fontWeight: "bold",
+      fontSize: 30
+    }
   });
 
 export default ChatScreen;

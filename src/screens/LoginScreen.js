@@ -17,7 +17,6 @@ import { setLoading } from '../redux/actions/loading';
 import { setUser } from '../redux/actions/user';
 import { Db, Auth } from '../services/FirebaseConfig';
 import Geolocation from '@react-native-community/geolocation';
-import AsyncStorage from '@react-native-community/async-storage';
 
 const LoginScreen = (props) => {
 
@@ -121,6 +120,9 @@ const LoginScreen = (props) => {
                 
                 dispatch(setLoading(false));
                 props.navigation.navigate('App');
+                setTimeout(() => {
+                    showToast("Success Login", "success");
+                }, 500);
             } catch (error) {
                 setErrorMessage(error.message);
                 showToast(errorMessage, "danger");
