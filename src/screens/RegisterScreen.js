@@ -8,12 +8,15 @@ import {
     TouchableOpacity, 
     ScrollView, 
     Image, 
-    StatusBar, 
+    StatusBar,
+    PermissionsAndroid, 
+    Platform  
 } from 'react-native';
 import { Toast, Spinner } from 'native-base';
 import { setLoading } from '../redux/actions/loading';
 import { Auth, Db } from '../services/FirebaseConfig';
 import ImagePicker from 'react-native-image-picker';
+import Geolocation from 'react-native-geolocation-service';
 
 const RegisterScreen = (props) => {
 
@@ -23,6 +26,7 @@ const RegisterScreen = (props) => {
     const [image, setImage] = useState('');
     const [imgData, setImgData] = useState(null);
     const [imgLoading, setImgLoading] = useState(false);
+    const [location, setLocation] = useState({});
 
     const isLoading = useSelector(state => state.loading.isLoading);
     const dispatch = useDispatch();
@@ -56,56 +60,120 @@ const RegisterScreen = (props) => {
         setImgData(null);
     }
 
-    const register = async () => {
-
-        dispatch(setLoading(true))
-
-        if (imgData == null) {setImgData("https://image.flaticon.com/icons/png/512/64/64572.png")}
-
-        const data = new FormData();
-        data.append('file', imgData);
-        data.append('upload_preset', 'p3se2auy');
-    
-        const res = await fetch(
-            'https://api.cloudinary.com/v1_1/tak-chat/image/upload',
-            {
-            method: 'POST',
-            body: data,
-            },
+    const hasLocationPermission = async () => {
+        if ( Platform.OS === 'ios' || (Platform.OS === 'android' && Platform.Version < 23)) {
+          return true;
+        }
+        const hasPermission = await PermissionsAndroid.check(
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
         );
-        
-        const file = await res.json();
+        if (hasPermission) {
+          return true;
+        }
+        const status = await PermissionsAndroid.request(
+          PermissionsAndroid.PERMISSIONS.ACCESS_FINE_LOCATION,
+        );
+        if (status === PermissionsAndroid.RESULTS.GRANTED) {
+          return true;
+        }
+        if (status === PermissionsAndroid.RESULTS.DENIED) {
+          ToastAndroid.show(
+            'Location Permission Denied By User.',
+            ToastAndroid.LONG,
+          );
+        } else if (status === PermissionsAndroid.RESULTS.NEVER_ASK_AGAIN) {
+          ToastAndroid.show(
+            'Location Permission Revoked By User.',
+            ToastAndroid.LONG,
+          );
+        }
+        return false;
+    };
     
-        if (name !== "") {  
-            dispatch(setLoading(true))
-            await Auth.createUserWithEmailAndPassword(email, password)
-            .then(async result => {
-                var userPro = Auth.currentUser;
-                userPro.updateProfile({
-                    displayName: name,
-                    photoURL: file.secure_url,
-                });
-                await Db.ref('users/' + result.user.uid)
-                .set({
-                    id: result.user.uid,
-                    name: name,
-                    email: email,
-                    password: password,
-                    image: file.secure_url,
-                })
-                .then(() => {
-                    dispatch(setLoading(false))
-                    showToast("Register Success", "success");
-                    props.navigation.navigate("Login");
-                });
-            })
-            .catch(error => {
-                dispatch(setLoading(false))
-                showToast(error.message, "danger");
-            });
+    const getLocation = async () => {
+        const hasLocationPermissions = await hasLocationPermission();
+        
+        if (!hasLocationPermissions) {
+          return;
+        }
+
+        await Geolocation.getCurrentPosition(
+            position => {
+            let {longitude, latitude} = position.coords;
+            setLocation({longitude, latitude});
+            console.log("Location",location);
+          },
+          err => {
+            console.log(err);
+          },
+          {
+            showLocationDialog: true,
+            forceRequestLocation: true,
+            enableHighAccuracy: false,
+            distanceFilter: 50,
+            fastestInterval: 5000,
+            timeout: 10000,
+            maximumAge: 8000,
+          },
+        );
+    };
+
+    const register = async () => {
+        await getLocation();
+        if (Object.keys(location).length !== 2) {
+            return showToast("Not Get Location yet", "danger");
         } else {
-            dispatch(setLoading(false))
-            showToast("Username Cannot be empty", "danger");  
+            dispatch(setLoading(true))
+
+            if (imgData == null) {setImgData("https://image.flaticon.com/icons/png/512/64/64572.png")}
+
+            const data = new FormData();
+            data.append('file', imgData);
+            data.append('upload_preset', 'p3se2auy');
+        
+            const res = await fetch(
+                'https://api.cloudinary.com/v1_1/tak-chat/image/upload',
+                {
+                method: 'POST',
+                body: data,
+                },
+            );
+            
+            const file = await res.json();
+        
+            if (name !== "") {  
+                dispatch(setLoading(true))
+                await Auth.createUserWithEmailAndPassword(email, password)
+                .then(async result => {
+                    var userPro = Auth.currentUser;
+                    userPro.updateProfile({
+                        displayName: name,
+                        photoURL: file.secure_url,
+                    });
+                    await Db.ref('users/' + result.user.uid)
+                    .set({
+                        id: result.user.uid,
+                        name: name,
+                        email: email,
+                        password: password,
+                        image: file.secure_url,
+                        status: 'offline',
+                        location,
+                    })
+                    .then(() => {
+                        dispatch(setLoading(false))
+                        showToast("Register Success", "success");
+                        props.navigation.navigate("Login");
+                    });
+                })
+                .catch(error => {
+                    dispatch(setLoading(false))
+                    showToast(error.message, "danger");
+                });
+            } else {
+                dispatch(setLoading(false))
+                showToast("Username Cannot be empty", "danger");  
+            }
         }
     };
 

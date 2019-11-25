@@ -16,7 +16,6 @@ import { Toast, Spinner  } from 'native-base';
 import { setLoading } from '../redux/actions/loading';
 import { setUser } from '../redux/actions/user';
 import { Db, Auth } from '../services/FirebaseConfig';
-// import Geolocation from '@react-native-community/geolocation';
 import Geolocation from 'react-native-geolocation-service';
 
 const LoginScreen = (props) => {
@@ -25,7 +24,6 @@ const LoginScreen = (props) => {
     const [password, setPassword] = useState("");
     const [errorMessage, setErrorMessage] = useState(null);
     const [location, setLocation] = useState({});
-    const [isMounted, setIsMounted] = useState(false);
 
     const isLoading = useSelector(state => state.loading.isLoading);
     const dispatch = useDispatch();
@@ -70,7 +68,6 @@ const LoginScreen = (props) => {
         await Geolocation.getCurrentPosition(
             position => {
             let {longitude, latitude} = position.coords;
-            
             setLocation({longitude, latitude});
             console.log("Location",location);
           },
@@ -121,9 +118,7 @@ const LoginScreen = (props) => {
                 
                 dispatch(setLoading(false));
                 props.navigation.navigate('App');
-                setTimeout(() => {
-                    showToast("Success Login", "success");
-                }, 500);
+                showToast("Success Login", "success");
             } catch (error) {
                 setErrorMessage(error.message);
                 showToast(errorMessage, "danger");
@@ -135,13 +130,11 @@ const LoginScreen = (props) => {
     
     useEffect(() => {
         const timeOut = setTimeout(async() => {
-            setIsMounted(true);
             await getLocation();
         }, 0);
 
         return () => {
             clearTimeout(timeOut);
-            setIsMounted(false);
             Geolocation.clearWatch();
             Geolocation.stopObserving();
         }
@@ -259,7 +252,6 @@ const styles = StyleSheet.create({
         fontWeight: "bold",
         fontSize: 15 
     },
-
 })
 
 export default LoginScreen;

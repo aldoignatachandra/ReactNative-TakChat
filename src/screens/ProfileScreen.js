@@ -32,10 +32,8 @@ const ProfileScreen = (props) => {
         Db.ref('users/' + user.id).update({status: 'offline'});
         dispatch(setUserNull());
         Auth.signOut();
-        setTimeout(() => {
-            props.navigation.navigate('Login');
-            showToast("Success Logout", "success");
-        }, 500);
+        props.navigation.navigate('Login');
+        showToast("Success Logout", "success");
     }
 
     const editImage = () => {
