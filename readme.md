@@ -1,7 +1,7 @@
 <h1 align="center">TakChat<br>( React Native Mobile App - Android )</h1>
 
 <p align="center">
-  <img src="screenshoot/ic_launcher_round copy.png" width="200"/>
+  <img src="screenshot/ic_launcher_round copy.png" width="200"/>
 </p>
 
 ## Introduction
@@ -31,16 +31,16 @@ You can Download the APK [`here`](https://drive.google.com/drive/folders/1iGlYjo
 ## Screenshot from the App
 <p align='center'>
   <span>
-      <image width="200" src="screenshoot/Login.png" />
-      <image width="200" src="screenshoot/Register.png" />
-      <image width="200" src="screenshoot/Profile.png" /> 
+      <image width="200" src="screenshot/Login.png" />
+      <image width="200" src="screenshot/Register.png" />
+      <image width="200" src="screenshot/Profile.png" /> 
   </span>
 </p>
 <p align='center'>
   <span>
-      <image width="200" src="screenshoot/FriendList.png" />
-      <image width="200" src="screenshoot/Chatroom2.png" />
-      <image width="200" src="screenshoot/Geolocation.png" /> 
+      <image width="200" src="screenshot/FriendList.png" />
+      <image width="200" src="screenshot/Chatroom2.png" />
+      <image width="200" src="screenshot/Geolocation.png" /> 
   </span>
 </p>
 
