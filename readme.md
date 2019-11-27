@@ -12,7 +12,7 @@
 ![React Native Geolocation Service](https://img.shields.io/badge/react%20native%20geolocation%20service-v3.1.0-brightgreen)
 ![React Native Gifted Chat](https://img.shields.io/badge/react%20native%20gifted%20chat-v0.11.3-yellowgreen)
 
-<p align='justify'>TakChat is a Chat Application inspired by one of the famous Korean chat application, Kakao Talk. With maps feature to track/show the user's friend location near to user's current location. GeoChat was built using React Native and Firebase real-time database.</p>
+<p align='justify'>TakChat is a Chat Application inspired by one of the famous Korean chat application, Kakao Talk. With maps feature to track/show the user's friend location near to user's current location. TakChat was built using React Native and Firebase real-time database.</p>
 
 ## Features
 * Track Friend's Location
