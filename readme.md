@@ -45,5 +45,4 @@ You can Download the APK [`here`](https://drive.google.com/drive/folders/1iGlYjo
 </p>
 
 ## License
-----
 [ISC](https://en.wikipedia.org/wiki/ISC_license "ISC")
